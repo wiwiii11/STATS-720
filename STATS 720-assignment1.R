@@ -1,10 +1,11 @@
----
-title: "STATS - 720 Homework-1"
-author: "Liedri Wiam (Student number: 400550999)"
----
+## ---
+## title: "STATS - 720 Homework-1"
+## author: "Liedri Wiam (Student number: 400550999)"
+## ---
 
 ## Load libraries
-  
+## BMB: packages!
+
 library(dotwhisker)
 library(effects)
 
@@ -14,7 +15,7 @@ library(effects)
 data("USArrests")
 USArrests
 summary(USArrests)
-require(graphics)
+require(graphics) ## BMB: not necessary
 pairs(USArrests, panel = panel.smooth, main = "USArrests data")
 
 
@@ -51,7 +52,11 @@ summary(model1)
 #"UrbanPop" and "Assault" are statistically significant predictors of "Rape",
 # while "Murder" is not statistically significant
 #we can try removing "murder" to see how the model would react , to see if it's statistically
-#efficient to remove that variable in our  model.
+##efficient to remove that variable in our  model.
+
+## BMB: what does this mean?? Why are you doing backward stepwise selection? The only reason
+##  to do stepwise selection is as an efficient form of regularization for predictive models.
+
 model2 <- lm(Rape ~ UrbanPop + Assault, data = USArrests)
 summary(model2)
 #we notice that both "urbanpop" and "assault" are statistically signficant predictors
@@ -67,12 +72,15 @@ summary(model2)
 #se-o they can predict "rape" better in the absence of "murder" ,the second model is still more appealing than
 #the first one , so we are going to keep the second one
 
+## BMB: this is a bad idea.
 
 ###diagnosing the model:
 plot(model2, which = 1)  # Residuals vs. Fitted Values Plot
 #the fitted values line of the plot is horizontal and the residuals are scattered across it
 #which suggets a linear relationship between "rape" and the response variables
-#there are few outliers : alaska and Nevada and rhode island
+##there are few outliers : alaska and Nevada and rhode island
+
+## BMB: these are only the largest three residuals, not 'outliers' in any formal sense
 
 ##a normal Q-Q plot for residuals
 qqnorm(residuals(model2))
@@ -86,8 +94,8 @@ qqline(residuals(model2))
 #normal distribution (unsymmetrical distribution)
 #we can also see a few outliers that deviate completely from the straight line.
 
-
-
+## BMB: the residuals are more fat-tailed than asymmetric. (There are approximately equal deviations
+## on both ends, in the direction of more extreme residuals.)
 
 plot(model2) #to plot all the plots at the same time
 # For the scale-location plot, we notice that the left part of the red line is horizontal which corresponds to a relatively constant 
@@ -105,8 +113,12 @@ plot(model_transformed)
 
 #we can notice that this approach fixed the heteroscedasticity and the assumption of constant variance is met.
 
+## BMB: I agree, this is much better
+MASS::boxcox(model2)
+## this also shows that log-transformation is a good idea
+
 ###Coefficient plot of the results:
-dwplot(model_transformed)
+dwplot(model_transformed) + expand_limits(x=0) + geom_vline(xintercept = 0, lty=2)
 #interpretation: 
 #we notice that the coefficient for "UrbanPop" in the log(Rape) model is 0.0085, this means that for a one-unit 
 #increase in "UrbanPop," the log(Rape) is expected to increase by 0.0085. Since exp(0.0085) =1.0085,
@@ -122,6 +134,7 @@ dwplot(model_transformed)
 #it just changes the interpretation of the coefficients in my model.
 
 ###effect plot:
+
 effect_plot<-allEffects(model_transformed)
 plot(effect_plot)
 #interpretation
@@ -160,6 +173,7 @@ dummy_data <- data.frame(
   treatment = as.factor(c("control", "impact", "control", "impact")),
   values = c(80, 65, 34, 26)
 )
+## BMB: you don't need a response variable for this example ...
 
 # Let's generate a minimal model matrix
 minimal_model_matrix <- model.matrix(~period + treatment, data = dummy_data)
@@ -210,7 +224,9 @@ calculate_metrics <- function(sim_data, violation_type) {
   power <- mean(p_value < 0.05)
   conf_interval <- confint(model)[2, ]
   coverage <- (conf_interval[1] < 1) & (1 < conf_interval[2])
-  
+
+    ## BMB: don't grow matrices; avoid <<- if you can
+    ## Why not make one data frame with all the results?
   # Append results to data frames
   results_bias <<- rbind(results_bias, data.frame(violation_type, Bias = bias))
   results_rmse <<- rbind(results_rmse, data.frame(violation_type, RMSE = rmse))
@@ -230,7 +246,10 @@ calculate_metrics(sim_data2, "Homoscedasticity_Violation")
 sim_data3 <- sim_fun(n = 100, slope = 1, sd = 1, intercept = 0, violation = "normality")
 calculate_metrics(sim_data3, "Normality_Violation")
 
-# Create a boxplot for bias
+## Create a boxplot for bias
+
+## BMB: this is a boxplot with one observation per group???
+
 library(ggplot2)
 ggplot(data = results_bias, aes(x = violation_type, y = Bias)) +
   geom_boxplot() +
@@ -248,3 +267,5 @@ ggplot(data = results_rmse, aes(x = violation_type, y = RMSE)) +
 #As for the rsme vs violation_type,we can notice that the homoscedasticity and normality violations have a rmse of 1.4 
 #and linearity violation a rmse of 0.24,  which means that the model exhibits relatively low prediction error when linearity is violated.
 #While an RMSE of 1.4 indicates that the model's predictions have larger errors when homoscedasticity is violated.
+
+## BMB: mark 7.7
