@@ -49,7 +49,10 @@ hist(kyphosis$Age, main = "Distribution of Patient Ages", xlab = "Age", ylab = "
 #Create a boxplot of the age variable:
 boxplot(kyphosis$Age, main = "Box Plot of Patient Ages", ylab = "Age", col = "lightblue")
 #Based on the boxplot,we notice that there are no outliers in age (it doesn't fall 
-# outside of the bounds for potential outliers).
+## outside of the bounds for potential outliers).
+
+## BMB: outliers probably aren't important for predictor variables, unless
+## you're afraid that they represent errors ...
 
 #Create a boxplot of the response variable against the age variable:
 boxplot(Age ~ Kyphosis,data = kyphosis, 
@@ -66,6 +69,10 @@ boxplot(Age ~ Kyphosis,data = kyphosis,
 #the family is a binomial family with a logit link.
 
 
+
+## BMB: you failed to update the response variable in these plots (!)
+## You're really plotting the same histogram of Age three times, in three
+##  different colours ... ??
 
 ##Plot the data in some sensible way
 # Create a histogram of the number variable:
@@ -119,7 +126,7 @@ plot(model, which = 3)
 
 # Cook's Distance Plot
 plot(model, which = 4)
-
+## BMB: you could do this all at once with plot(model, which = 1:4)
 par(mfrow = c(1, 1))#reset
 
 #performance package plots 
@@ -149,13 +156,20 @@ DHARMa::plotQQunif(model)
 
 #Interpret your results and draw coefficient plots
 coefplot(model)
+
+## BMB: you should **always** standardize predictors if you're going
+## to draw a coefficient plot with coefficients with different units
+
 #we observe from the coef plot that the coef estimate of "Number" is the one with the most impact on the response variable "kyphosis",
 #while the coef estimate of both "age" and "start" have very low impact ont the response variable.
 #The positive coefficient for 'Number' suggests that an increase in the number of vertebrae levels involved in the surgery is associated with a higher 
 #likelihood of kyphosis being present.
 #On the other hand, the coefficient estimates for 'Age' and 'Start' appear to have relatively lower impact. For 'Age,' the coefficient is zero, indicating 
 #that a one-unit increase in age results in no change in the odds of kyphosis. 
-#Meanwhile, the coefficient for 'Start' is -0.25, suggesting that a one-unit change in the starting vertebrae level results in a small negative change in the odds of kyphosis.
+##Meanwhile, the coefficient for 'Start' is -0.25, suggesting that a one-unit change in the starting vertebrae level results in a small negative change in the odds of kyphosis.
+
+## BMB: Several of your interpretations here are incorrect because you
+## forgot to standardize ...
 
 
 
@@ -188,7 +202,20 @@ model2 <- glm(shells ~ year + prev + offset(log(Area)), data = g_data, family = 
 
 # Check for overdispersion
 summary(model2)
-#The dispersion parameter for the Poisson family is set to 1, which suggests that the chosen model is not indicating overdispersion and is appropriate.
+##The dispersion parameter for the Poisson family is set to 1, which suggests that the chosen model is not indicating overdispersion and is appropriate.
+
+## BMB: "dispersion parameter is set to 1" means that glm() is **ASSUMING**
+##  there is no dispersion (i.e., it's not trying to estimate the dispersion
+## parameter -- this is incorrect.  There are a few different ways you
+## can compute
+
+
+pssq <- sum(residuals(model2, type = "pearson")^2)
+pssq/df.residual(model2)
+
+## or
+
+sigma(update(model2, family = "quasipoisson"))^2
 
 #model3 <- glm(shells ~ year + prev + Site+ offset(log(Area)), data = g_data, family = poisson)
 #summary(model3)
@@ -198,6 +225,7 @@ summary(model2)
 
 #We choose the model with the lowest AIC which is the model2.
 
+## BMB: why are you doing model selection?
 
 ###Using mle2 function from the 'bbmle' package
 # We define the Poisson log-likelihood function
@@ -207,6 +235,8 @@ poisson_loglik <- function(logmu, y) {
   -sum(dpois(y, lambda, log = TRUE))
 }
 
+
+## BMB: this Poisson log-likelihood doesn't include any covariates ...
 
 # Fitting the model using mle2
 fit_model <- mle2(shells ~ dpois(lambda=exp(loglambda)*Area), parameters=list(loglambda~factor(year)+prev), data=g_data, start=list(loglambda=0))
@@ -222,6 +252,8 @@ custom_poisson_loglik <- function(log_mean, data) {
   y <- data$shells
   -sum(-lambda + y * log(lambda) - log(factorial(y)))
 }
+
+## BMB: there's no benefit to doing this over using dpois(., log = TRUE)
 
 # Initial parameter values fro mle2 and optim
 start_values_mle2 <- list(log_mean = log(mean(g_data$shells)))
@@ -300,6 +332,8 @@ reduced_model_NV <- glm(HG ~ PI + EH, family = binomial(link = "logit"), data = 
 reduced_model_EH <- glm(HG ~ PI + NV, family = binomial(link = "logit"), data = endometrial)
 reduced_model_PI <- glm(HG ~ NV + EH, family = binomial(link = "logit"), data = endometrial)
 
+## BMB: you can do this with drop1() ...
+
 # Perform the likelihood ratio test for the NV variable
 lrt_result_NV <- lrtest(model_glm, reduced_model_NV)
 # Perform the likelihood ratio test for the EH variable
@@ -326,3 +360,7 @@ print(lrt_result_PI)
 #Both NV and EH seem to be significant predictors of the HG variable.
 #PI is not a significant predictor based on the likelihood ratio test.
 
+
+## BMB mark:8
+## I will try to post a worked example of the last part of Q2, you
+##  definitely missed the point there ...
