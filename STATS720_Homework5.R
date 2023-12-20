@@ -5,7 +5,7 @@ library(broom)
 library(broom.mixed)
 library(dotwhisker)
 library(ggeffects)
-library(ggemmeans)
+## library(ggemmeans) ## BMB: doesn't exist???
 library(gridExtra)
 
 # Loading the data
@@ -54,6 +54,7 @@ gam_summary
 # In summary, the gam model demonstrates a nonlinear relationship between age and the log-odds of the response variable being 1.
 # However, the interaction terms and district-specific smooth term do not seem to significantly contribute to the model.
 
+## BMB: note that results are *very similar* between models ...
 
 # Fitting a model with a fixed quadratic function of age
 gam_quad_model <- gam(use_n ~ poly(age_sc, 2) + urban + s(district, bs = "re"),
@@ -74,7 +75,10 @@ pred_quad <- cbind(Contraception, pred_quad)
 plot1 <- ggplot(pred_quad, aes(x = age_sc, y = fit, color = urban)) +
   geom_line() +
   geom_ribbon(aes(ymin = fit - 1.96 * se.fit, ymax = fit + 1.96 * se.fit), alpha = 0.2) +
-  ggtitle("Model with Fixed Quadratic Function of Age")
+    ggtitle("Model with Fixed Quadratic Function of Age")
+
+## BMB: ugly! need to construct a new data frame for the predictions
+## if you want it pretty (or use a built-in package like ggpredict)
 
 # The predicted values for the model with a thin-plate spline for age
 pred_spline <- as.data.frame(predict(gam_spline_model, type = "response", se.fit = TRUE))
@@ -95,6 +99,7 @@ grid.arrange(plot1, plot2, ncol = 2)
 Contraception$age_sc_squared_urban <- ifelse(Contraception$urban == "Y", poly(Contraception$age_sc, 2), 0)
 Contraception$age_sc_squared_rural <- ifelse(Contraception$urban == "N", poly(Contraception$age_sc, 2), 0)
 
+## BMB: don't need both s() and squared terms ...
 # Fitting a model with a quadratic-age urban/rural interaction
 gam_interaction_model <- gam(use_n ~ s(age_sc, by = urban) + age_sc_squared_urban + age_sc_squared_rural + s(district, bs = "re"),
                              data = Contraception,
@@ -151,6 +156,12 @@ gam_model <- gam(use_n ~ s(age_sc, by = urban) + s(age_sc, district, bs = "fs"),
                  data = Contraception,
                  family = binomial)
 
+## BMB: incomplete!
+
+nd <- with(Contraception,
+           expand.grid(urban = levels(urban),
+                       age_sc = unique(age_sc),
+                       district = unique(district)))
 # Generatting predictions for model (a) using glmer()
 pred_glmer <- as.data.frame(predict(glmer_model, newdata = nd, type = "response", re.form = NA))
 
@@ -161,6 +172,8 @@ pred_glmer <- cbind(nd, pred_glmer)
 pred_gam <- cbind(nd, pred_gam)
 
 # Plotting the results -
+
+## BMB: 'fit' not found. Couldn't sort it out.
 
 # For model (a)
 p_glmer <- ggplot(pred_glmer, aes(x = age_sc, y = fit, color = urban, group = district)) +

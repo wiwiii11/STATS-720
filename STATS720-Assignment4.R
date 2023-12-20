@@ -38,6 +38,9 @@ percentage_missing_ht
 mean_wt <- mean(nepali$wt, na.rm = TRUE)
 mean_ht <- mean(nepali$ht, na.rm = TRUE)
 
+## BMB: this is a big topic that I didn't get a chance to cover
+## both single (e.g. mean) imputation and casewise deletion are
+##  potentially problematic ...
 nepali$wt[is.na(nepali$wt)] <- mean_wt
 nepali$ht[is.na(nepali$ht)] <- mean_ht
 
@@ -54,7 +57,8 @@ ggplot(nepali, aes(x = age, y = wt, color = as.factor(id))) +
        y = "Weight") +
   theme_minimal() +
   guides(color = FALSE)
-#Hard to visualize when trying to assign different colors to each child due to a large number of children 
+##Hard to visualize when trying to assign different colors to each child due to a large number of children
+## BMB: good. You can also use group = id
 ggplot(nepali, aes(x = sex, y = wt, color = as.factor(id))) +
   geom_point(alpha = 0.5, size = 3) +
   labs(title = "Age vs. Weight for Each Child",
@@ -83,7 +87,8 @@ summary(mixed_model)
 
 #here's an interpretation based on the summary's output:
 #Fixed Effects:
-#Intercept: The estimated intercept is 5.846030, This suggests that when all other predictors are zero (age,mage, sex, and lit), the estimated weight is approximately 5.846030.
+##Intercept: The estimated intercept is 5.846030, This suggests that when all other predictors are zero (age,mage, sex, and lit), the estimated weight is approximately 5.846030.
+## BMB: too many significant digits?
 #Age: For every one-unit increase in age, there's an estimated average increase of 0.116132 in wt(statistically significant) It suggests that as children get older, their weight tends to increase on average.
 #Sex (Female): The coefficient for 'sexfemale' is -0.4353. This suggests that, on average, females have an estimated weight that is around 0.4353 units lower than males
 #Literacy (Lit): The effect of mother's literacy on weight is estimated to be 0.696403 . Though positive, it's not statistically significant.
@@ -96,11 +101,14 @@ summary(mixed_model)
 
 
 plot(mixed_model)
-#the plot shows a random scatter of points around the horizontal line at zero without any distinct pattern,which means that the assumption of constant variance (homoscedasticity) is met.
+###the plot shows a random scatter of points around the horizontal line at zero without any distinct pattern,which means that the assumption of constant variance (homoscedasticity) is met.
+## BMB: you can see that the imputed points are weird!
 
 #Normal q-q plot:
 qqnorm(resid(mixed_model))
-#the points closely follow a diagonal line with a slight curvature, which suggests that in general, the residuals are approximately normally distributed.
+qqline(resid(mixed_model), col = 2)
+##the points closely follow a diagonal line with a slight curvature, which suggests that in general, the residuals are approximately normally distributed.
+## BMB: this is worse than you think (see added QQ line)
 
 
 # Create a plot with predictions
@@ -149,7 +157,7 @@ summary(glmer_model)
 #Urban residence (urbanY) is positively associated with increased contraceptive use.
 #Older age (age) is negatively associated with contraceptive use.
 plot(glmer_model)
-
+## BMB: what about this?
 
 contra1 <- ggpredict(glmer_model,terms=c("urban","district[1,2,3,4,5]"),type="random")
 plot(contra1,connect_lines = FALSE)
@@ -188,7 +196,10 @@ coefficients_df <- data.frame(
 barplot(t(coefficients_df), beside = TRUE, legend.text = TRUE,
         args.legend = list(x = "bottomright"), col = rainbow(4),
         main = "Comparison of Fixed-Effect Parameters")
-#we can observe from the fixed coefficient plot that the fixed effects do not differ from each other significantly for the four different methods   
+##we can observe from the fixed coefficient plot that the fixed effects do not differ from each other significantly for the four different methods
+
+## BMB: how do you conclude 'significantly'?
+## should probably scale age if including it in a plot with other coeffs
 
 #PART 3:
 # Fit Bayesian GLMM
@@ -210,6 +221,8 @@ summary(model_bayes)
 #sexfemale: The effect of gender (specifically female) on weight is not statistically significant as the credible interval includes zero.
 #Interpretation: Age and mage seem to have a significant positive effect on weight. Literacy and gender (female) dont show a clear impact on weight 
 #based on the given credible intervals.
+
+## BMB: what about "two different Bayesian packages"?
 
 #PART 4:
 # simfun Function
@@ -344,5 +357,8 @@ cat("Average Scaled RMSE - AGHQ:", avg_scaled_rmse_aghq, "\n")
 cat("\nAverage Coverage - PQL:", avg_coverage_pql, "\n")
 cat("Average Coverage - Laplace:", avg_coverage_laplace, "\n")
 cat("Average Coverage - AGHQ:", avg_coverage_aghq, "\n")
+
+
+## mark: 9/10
 
 
